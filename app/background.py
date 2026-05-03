@@ -6,8 +6,8 @@ from .database import SessionLocal
 from . import models
 from .notify import send_whatsapp
 
-SILENT_THRESHOLD_SECONDS = 120   # 2 minutes
-CHECK_INTERVAL = 30             # run every 30 seconds
+SILENT_THRESHOLD_SECONDS = 120
+CHECK_INTERVAL = 30
 
 
 def check_silent_devices():
@@ -23,8 +23,10 @@ def check_silent_devices():
 
             diff = (now - device.last_seen).total_seconds()
 
-            # 🚨 SILENT ALERT TRIGGER
+            # 🚨 SILENT ALERT
             if diff > SILENT_THRESHOLD_SECONDS:
+
+                # Only trigger if NOT already silent
                 if device.alert_type != "SILENT":
                     msg = f"🚨 SILENT ALERT: {device.device_id}"
                     print(msg)
@@ -41,6 +43,7 @@ def check_silent_devices():
                     print(msg)
                     send_whatsapp(msg)
 
+                    # ⚠️ IMPORTANT: reset safely
                     device.alert_type = "NONE"
                     device.alert_active = False
                     db.commit()
