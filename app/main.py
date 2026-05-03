@@ -78,3 +78,15 @@ def test_whatsapp():
 @app.get("/")
 def root():
     return {"message": "FactorySense API running 🚀"}
+
+import os
+from app.database import engine
+from app import models
+
+# 🔥 RESET DB (ONLY ONCE)
+if os.getenv("RESET_DB") == "true":
+    models.Base.metadata.drop_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
+    print("⚠️ Database RESET DONE")
+else:
+    models.Base.metadata.create_all(bind=engine)
