@@ -1,27 +1,18 @@
-from twilio.rest import Client
 import os
-
+from twilio.rest import Client
 
 def send_whatsapp(message: str):
-    try:
-        sid = os.getenv("TWILIO_ACCOUNT_SID")
-        token = os.getenv("TWILIO_AUTH_TOKEN")
-        from_ = os.getenv("TWILIO_WHATSAPP_FROM")
-        to = os.getenv("TWILIO_WHATSAPP_TO")
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    from_whatsapp = os.getenv("TWILIO_WHATSAPP_FROM")
+    to_whatsapp = os.getenv("TWILIO_WHATSAPP_TO")
 
-        if not all([sid, token, from_, to]):
-            print("❌ Missing Twilio env variables")
-            return
+    client = Client(account_sid, auth_token)
 
-        client = Client(sid, token)
+    msg = client.messages.create(
+        body=message,
+        from_=from_whatsapp,
+        to=to_whatsapp
+    )
 
-        msg = client.messages.create(
-            body=message,
-            from_=from_,
-            to=to,
-        )
-
-        print("📩 WhatsApp sent:", msg.sid)
-
-    except Exception as e:
-        print("❌ WhatsApp error:", e)
+    print("📤 Sent:", msg.sid)
