@@ -1,15 +1,10 @@
-from datetime import datetime
 from sqlalchemy.orm import Session
 from . import crud
 from .notify import send_whatsapp
 
-
-# 🔥 TEST THRESHOLDS
+# 🔥 THRESHOLDS
 TEMP_THRESHOLD = 35
 VIB_THRESHOLD = 1.0
-
-# 🔥 COOLDOWN (prevents spam)
-COOLDOWN_SECONDS = 60
 
 
 def check_temperature_alert(readings):
@@ -38,32 +33,23 @@ def process_alert(db: Session, device_id: str):
 
     new_alert = determine_alert(readings)
 
-    print(f"🔍 Checking {device_id} → {new_alert}")
+    print(f"🔍 {device_id} → {new_alert}")
 
-    now = datetime.utcnow()
+    # 🚫 NO CHANGE → DO NOTHING
+    if new_alert == state.alert_type:
+        return
 
-    # ⛔ cooldown check
-    if state.last_alert_ts:
-        diff = (now - state.last_alert_ts).total_seconds()
-        if diff < COOLDOWN_SECONDS:
-            print("⏳ Cooldown active, skipping...")
-            return
+    # 🔥 SEND ONLY WHEN STATE CHANGES
+    if new_alert != "NONE":
+        msg = f"🚨 ALERT: {device_id} → {new_alert}"
+    else:
+        msg = f"✅ RESOLVED: {device_id}"
 
-    if new_alert != state.alert_type:
-        if new_alert != "NONE":
-            msg = f"🚨 ALERT: {device_id} → {new_alert}"
-        else:
-            msg = f"✅ RESOLVED: {device_id}"
+    print("📤 Sending:", msg)
+    send_whatsapp(msg)
 
-        print(msg)
+    # ✅ UPDATE STATE
+    state.alert_type = new_alert
+    state.alert_active = new_alert != "NONE"
 
-        try:
-            send_whatsapp(msg)
-            state.last_alert_ts = now
-        except Exception as e:
-            print("❌ WhatsApp failed:", e)
-
-        state.alert_type = new_alert
-        state.alert_active = new_alert != "NONE"
-
-        db.commit()
+    db.commit()
