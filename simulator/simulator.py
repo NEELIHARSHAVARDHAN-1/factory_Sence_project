@@ -3,7 +3,7 @@ import time
 import random
 from datetime import datetime
 
-API_URL = "http://127.0.0.1:8000/telemetry"
+API_URL = "https://factorysense-api-production-14aa.up.railway.app/telemetry"
 
 
 def send(device_id, temp, vib):
@@ -61,7 +61,7 @@ def run():
         device_normal("device_2")
         device_faulty("device_3", counter)
 
-        time.sleep(10)  # spec requirement
+        time.sleep(1)  # spec requirement
 
 
 if __name__ == "__main__":
