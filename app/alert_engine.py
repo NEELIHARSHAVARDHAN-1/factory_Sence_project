@@ -2,21 +2,23 @@ from sqlalchemy.orm import Session
 from . import crud
 from .notify import send_whatsapp
 
-# 🔥 THRESHOLDS
-TEMP_THRESHOLD = 35
-VIB_THRESHOLD = 1.0
+# 🔥 THRESHOLDS (as per requirement)
+TEMP_THRESHOLD = 75
+VIB_THRESHOLD = 2.5
 
 
+# ✅ TEMP: 3 consecutive readings > 75°C
 def check_temperature_alert(readings):
     if len(readings) < 3:
         return False
     return all(r.temperature_c > TEMP_THRESHOLD for r in readings[:3])
 
 
+# ✅ VIB: 5 consecutive readings > 2.5g
 def check_vibration_alert(readings):
-    if len(readings) < 3:
+    if len(readings) < 5:
         return False
-    return all(r.vibration_g > VIB_THRESHOLD for r in readings[:3])
+    return all(r.vibration_g > VIB_THRESHOLD for r in readings[:5])
 
 
 def determine_alert(readings):
