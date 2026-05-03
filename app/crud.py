@@ -15,7 +15,7 @@ def create_telemetry(db: Session, data):
     return telemetry
 
 
-def get_last_readings(db: Session, device_id: str, limit=50):
+def get_last_readings(db: Session, device_id: str, limit=5):
     return (
         db.query(models.Telemetry)
         .filter(models.Telemetry.device_id == device_id)
