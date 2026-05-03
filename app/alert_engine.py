@@ -35,15 +35,18 @@ def process_alert(db: Session, device_id: str):
 
     print(f"🔍 Checking {device_id} → {new_alert}")
 
+    # 🚀 FORCE DEBUG (REMOVE LATER)
+    send_whatsapp(f"📡 DEBUG: {device_id} → {new_alert}")
+
     if new_alert != state.alert_type:
         if new_alert != "NONE":
             msg = f"🚨 ALERT: {device_id} → {new_alert}"
-            print(msg)
-            send_whatsapp(msg)
         else:
             msg = f"✅ RESOLVED: {device_id}"
-            print(msg)
-            send_whatsapp(msg)
+
+        print(msg)
+        send_whatsapp(msg)
+
         state.alert_type = new_alert
         state.alert_active = new_alert != "NONE"
         db.commit()
