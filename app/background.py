@@ -70,7 +70,7 @@ def start_background_worker():
 
     while True:
         check_silent_devices()
-        time.sleep(CHECK_INTERVAL)l
+        time.sleep(CHECK_INTERVAL)
 from . import models
 from .notify import send_whatsapp
 
