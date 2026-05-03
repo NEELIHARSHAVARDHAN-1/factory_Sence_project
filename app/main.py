@@ -4,18 +4,28 @@ import threading
 import os
 
 from .database import Base, engine, SessionLocal
-from . import schemas, crud
+from . import schemas, crud, models
 from .alert_engine import process_alert
 from .background import start_background_worker
 from .notify import send_whatsapp
+
 from dotenv import load_dotenv
 load_dotenv()
 
-Base.metadata.create_all(bind=engine)
+
+# ✅ DB INIT (ONLY ONCE)
+if os.getenv("RESET_DB") == "true":
+    models.Base.metadata.drop_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
+    print("⚠️ Database RESET DONE")
+else:
+    models.Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI()
 
 
+# 🔌 DB SESSION
 def get_db():
     db = SessionLocal()
     try:
@@ -24,14 +34,15 @@ def get_db():
         db.close()
 
 
-# 🔥 START BACKGROUND WORKER
+# 🔥 BACKGROUND WORKER
 @app.on_event("startup")
 def start_worker():
     thread = threading.Thread(target=start_background_worker, daemon=True)
     thread.start()
+    print("🟢 Background worker started")
 
 
-# 🔥 TELEMETRY
+# 📡 TELEMETRY
 @app.post("/telemetry")
 def receive_telemetry(data: schemas.TelemetryCreate, db: Session = Depends(get_db)):
     crud.create_telemetry(db, data)
@@ -56,7 +67,7 @@ def get_device_status(device_id: str, db: Session = Depends(get_db)):
     }
 
 
-# 🧪 DEBUG ENV (VERY IMPORTANT)
+# 🧪 DEBUG ENV
 @app.get("/debug-env")
 def debug_env():
     return {
@@ -78,15 +89,3 @@ def test_whatsapp():
 @app.get("/")
 def root():
     return {"message": "FactorySense API running 🚀"}
-
-import os
-from app.database import engine
-from app import models
-
-# 🔥 RESET DB (ONLY ONCE)
-if os.getenv("RESET_DB") == "true":
-    models.Base.metadata.drop_all(bind=engine)
-    models.Base.metadata.create_all(bind=engine)
-    print("⚠️ Database RESET DONE")
-else:
-    models.Base.metadata.create_all(bind=engine)
