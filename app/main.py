@@ -1,11 +1,15 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 import threading
+import os
 
 from .database import Base, engine, SessionLocal
 from . import schemas, crud
 from .alert_engine import process_alert
 from .background import start_background_worker
+from .notify import send_whatsapp
+from dotenv import load_dotenv
+load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,12 +24,14 @@ def get_db():
         db.close()
 
 
+# 🔥 START BACKGROUND WORKER
 @app.on_event("startup")
 def start_worker():
     thread = threading.Thread(target=start_background_worker, daemon=True)
     thread.start()
 
 
+# 🔥 TELEMETRY
 @app.post("/telemetry")
 def receive_telemetry(data: schemas.TelemetryCreate, db: Session = Depends(get_db)):
     crud.create_telemetry(db, data)
@@ -36,7 +42,8 @@ def receive_telemetry(data: schemas.TelemetryCreate, db: Session = Depends(get_d
     return {"status": "ok"}
 
 
-@app.get("/devices/{device_id}/status", response_model=schemas.DeviceStatus)
+# 📊 STATUS
+@app.get("/devices/{device_id}/status")
 def get_device_status(device_id: str, db: Session = Depends(get_db)):
     readings = crud.get_last_readings(db, device_id)
     state = crud.get_or_create_device_state(db, device_id)
@@ -47,3 +54,27 @@ def get_device_status(device_id: str, db: Session = Depends(get_db)):
         "alert_active": state.alert_active,
         "readings": readings,
     }
+
+
+# 🧪 DEBUG ENV (VERY IMPORTANT)
+@app.get("/debug-env")
+def debug_env():
+    return {
+        "sid_set": bool(os.getenv("TWILIO_ACCOUNT_SID")),
+        "token_set": bool(os.getenv("TWILIO_AUTH_TOKEN")),
+        "from": os.getenv("TWILIO_WHATSAPP_FROM"),
+        "to": os.getenv("TWILIO_WHATSAPP_TO"),
+    }
+
+
+# 📲 TEST WHATSAPP
+@app.get("/test-whatsapp")
+def test_whatsapp():
+    send_whatsapp("🚀 TEST MESSAGE FROM RAILWAY")
+    return {"status": "sent"}
+
+
+# 🏠 ROOT
+@app.get("/")
+def root():
+    return {"message": "FactorySense API running 🚀"}

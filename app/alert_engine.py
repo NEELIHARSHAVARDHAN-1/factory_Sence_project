@@ -2,8 +2,9 @@ from sqlalchemy.orm import Session
 from . import crud
 from .notify import send_whatsapp
 
-TEMP_THRESHOLD = 75
-VIB_THRESHOLD = 2.5
+# 🔥 LOWER thresholds for testing
+TEMP_THRESHOLD = 35
+VIB_THRESHOLD = 1.0
 
 
 def check_temperature_alert(readings):
@@ -13,9 +14,9 @@ def check_temperature_alert(readings):
 
 
 def check_vibration_alert(readings):
-    if len(readings) < 5:
+    if len(readings) < 3:
         return False
-    return all(r.vibration_g > VIB_THRESHOLD for r in readings[:5])
+    return all(r.vibration_g > VIB_THRESHOLD for r in readings[:3])
 
 
 def determine_alert(readings):
@@ -32,6 +33,8 @@ def process_alert(db: Session, device_id: str):
 
     new_alert = determine_alert(readings)
 
+    print(f"🔍 Checking {device_id} → {new_alert}")
+
     if new_alert != state.alert_type:
         if new_alert != "NONE":
             msg = f"🚨 ALERT: {device_id} → {new_alert}"
@@ -41,7 +44,6 @@ def process_alert(db: Session, device_id: str):
             msg = f"✅ RESOLVED: {device_id}"
             print(msg)
             send_whatsapp(msg)
-
         state.alert_type = new_alert
         state.alert_active = new_alert != "NONE"
         db.commit()

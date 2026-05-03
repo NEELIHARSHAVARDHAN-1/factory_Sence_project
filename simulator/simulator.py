@@ -61,7 +61,7 @@ def run():
         device_normal("device_2")
         device_faulty("device_3", counter)
 
-        time.sleep(1)  # spec requirement
+        time.sleep(10)  # spec requirement
 
 
 if __name__ == "__main__":
