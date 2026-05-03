@@ -2,7 +2,8 @@ import time
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from .database import SessionLocaimport time
+from .database import SessionLocal
+import time
 from datetime import datetime
 from sqlalchemy.orm import Session
 
