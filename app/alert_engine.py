@@ -35,6 +35,10 @@ def process_alert(db: Session, device_id: str):
 
     print(f"🔍 {device_id} → {new_alert}")
 
+    # 🚫 BLOCK if SILENT is active
+    if state.alert_type == "SILENT":
+        return
+
     # 🚫 NO CHANGE → DO NOTHING
     if new_alert == state.alert_type:
         return
