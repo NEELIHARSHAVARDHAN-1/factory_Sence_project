@@ -12,14 +12,15 @@ class Telemetry(Base):
     temperature_c = Column(Float)
     vibration_g = Column(Float)
 
-
 class DeviceState(Base):
     __tablename__ = "device_state"
 
     device_id = Column(String, primary_key=True, index=True)
     last_seen = Column(DateTime, default=datetime.utcnow)
+
     alert_type = Column(String, default="NONE")
     alert_active = Column(Boolean, default=False)
 
-    # 🔥 NEW (VERY IMPORTANT)
-    last_alert_ts = Column(DateTime, nullable=True)
+    # 🔥 ADD THIS
+    is_silent = Column(Boolean, default=False)
+
