@@ -1,25 +1,25 @@
 from sqlalchemy.orm import Session
 from . import crud
 from .notify import send_whatsapp
+import time
 
 # 🔥 Thresholds
 TEMP_THRESHOLD = 35
 VIB_THRESHOLD = 1.0
 
+# ⏱ Prevent spam (in seconds)
+COOLDOWN_SECONDS = 60
+
 
 # ================================
-# 🔍 ALERT CHECK FUNCTIONS
+# ALERT CHECKS
 # ================================
 
 def check_temperature_alert(readings):
-    if len(readings) == 0:
-        return False
     return any(r.temperature_c > TEMP_THRESHOLD for r in readings)
 
 
 def check_vibration_alert(readings):
-    if len(readings) == 0:
-        return False
     return any(r.vibration_g > VIB_THRESHOLD for r in readings)
 
 
@@ -32,7 +32,7 @@ def determine_alert(readings):
 
 
 # ================================
-# 🚨 MAIN ALERT ENGINE
+# MAIN ALERT ENGINE
 # ================================
 
 def process_alert(db: Session, device_id: str):
@@ -41,27 +41,29 @@ def process_alert(db: Session, device_id: str):
 
     new_alert = determine_alert(readings)
 
-    print(f"🔍 Checking {device_id} → {new_alert}")
+    print(f"🔍 {device_id} → {new_alert}")
 
-    # 🚀 DEBUG MESSAGE (REMOVE LATER)
-    send_whatsapp(f"📡 DEBUG: {device_id} → {new_alert}")
+    now = int(time.time())
 
-    # ================================
-    # 🚨 ALERT LOGIC
-    # ================================
+    # ⛔ Cooldown (prevent spam)
+    if state.last_alert_ts and (now - state.last_alert_ts < COOLDOWN_SECONDS):
+        print("⏱ Cooldown active — skipping")
+        return
 
+    # 🚨 Send only when alert state changes
     if new_alert != state.alert_type:
 
         if new_alert != "NONE":
             msg = f"🚨 ALERT: {device_id} → {new_alert}"
-
         else:
             msg = f"✅ RESOLVED: {device_id}"
 
         print(msg)
         send_whatsapp(msg)
 
-        # update DB state
+        # update state
         state.alert_type = new_alert
         state.alert_active = new_alert != "NONE"
+        state.last_alert_ts = now
+
         db.commit()
